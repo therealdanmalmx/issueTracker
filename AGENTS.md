@@ -63,6 +63,18 @@ Shared infrastructure (mediator abstractions, behaviors) goes in `Common/`.
 - Follow .NET and ASP.NET Core best practices (DI, async, validation at boundaries, no secrets in source; use user-secrets/config).
 - Build before finishing: `dotnet build`.
 
+## Deployment
+
+Target is **Azure App Service**; `main` deploys automatically via GitHub Actions. Write code for production from the start — never assume localhost, a single instance, or a developer machine.
+
+- **No secrets in `appsettings*.json` or any committed file.** Locally use .NET user secrets (`UserSecretsId` is already set); in production values come from App Service configuration. If you need a new setting, add the key with an empty/placeholder value or not at all, and tell the user what to set.
+- Connection strings and all config are read through `IConfiguration` — never hard-coded, never a literal in code.
+- **Do not call `Database.Migrate()` (or `EnsureCreated`) on startup.** Migrations are applied by the pipeline as an idempotent SQL script.
+- Assume multiple instances. No shared state in memory — no static mutable caches, no in-process counters, no local file storage for anything that must persist. Use the database or a distributed store.
+- Assume HTTPS everywhere: secure cookies, absolute URLs built from the request, no `http://` literals.
+- Log with `ILogger<T>` and structured message templates (`_logger.LogInformation("Issue {IssueId} created", id)`). Never `Console.WriteLine`, never string interpolation in log messages.
+- **Do not modify anything under `.github/workflows/` without asking the user first.**
+
 ## Commands
 
 - Run: `dotnet run`
